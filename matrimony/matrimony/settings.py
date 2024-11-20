@@ -35,6 +35,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'app_user_authentications',
     'app_admin',
+    'app_profile',
 
     'rest_framework',
     'rest_framework_simplejwt',

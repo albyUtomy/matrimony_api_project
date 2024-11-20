@@ -1,26 +1,32 @@
 from rest_framework import serializers
-from .models import UserProfileModel
+from .models import UserProfile
 from app_admin.models import CategoryValue
-from .validator import validate_category_fields
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserProfileModel
+        model = UserProfile
         fields = [
-            'user_id', 'age', 'gender', 'dob', 'bio', 'weight', 'height',
+            'user', 'age', 'gender', 'dob', 'bio', 'weight', 'height',
             'religion', 'caste', 'income', 'profession', 'education',
             'address', 'language'
         ]
 
-
     def validate(self, data):
         """
-        Validate category-based fields using the validate_category_field function.
+        Validate category-based fields against the CategoryValue table.
         """
-        category_fields = ['gender', 'religion', 'caste', 'profession', 'education']
-        
-        for field in category_fields:
-            value = data.get(field)
-            if value:  # Only validate if the field is provided
-                validate_category_fields(field, value)
+        category_fields = {
+            'gender': data.get('gender'),
+            'religion': data.get('religion'),
+            'caste': data.get('caste'),
+            'profession': data.get('profession'),
+            'education': data.get('education'),
+        }
+
+        for field, value in category_fields.items():
+            if value and not CategoryValue.objects.filter(
+                category_id__category_name__iexact=field, category_value__iexact=value
+            ).exists():
+                raise serializers.ValidationError({field: f"'{value}' is not a valid {field} option."})
+
         return data
