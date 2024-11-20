@@ -8,10 +8,11 @@ from rest_framework.permissions import IsAuthenticated
 # local import
 from .models import Category, CategoryValue
 from .serializer import CategorySerializer, CategoryValuesSerializer,CategoryValueListSerializer
-
-
+from core.permissions import IsAdminUser
 # Create your views here.
 class CreateCategoryView(APIView):
+    permission_classes = [IsAdminUser]
+
     def post(self, request):
         try:
             serializer = CategorySerializer(data=request.data)
@@ -34,6 +35,8 @@ class CreateCategoryView(APIView):
         
 
 class AddCategoryValuesView(APIView):
+    permission_classes = [IsAdminUser]
+
     def post(self, request, category_id):
         try:
             # Get the category from the ID
@@ -47,20 +50,29 @@ class AddCategoryValuesView(APIView):
                     'message': 'No category values provided.'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Validate each value and add it to the category if it doesn't already exist
-            for value in category_values:
-                # Check if the value already exists for the category
-                if CategoryValue.objects.filter(category_id=category, category_value__iexact=value).exists():
-                    return Response({
-                        'message': f"The value '{value}' already exists in the category {category.category_name}."
-                    }, status=status.HTTP_400_BAD_REQUEST)
+            # Serialize the data with the CategoryValuesSerializer
+            serializer = CategoryValuesSerializer(data={
+                'category_id': category_id,
+                'category_values': category_values
+            })
 
-                # Create the new category value
-                CategoryValue.objects.create(category_id=category, category_value=value)
+            if serializer.is_valid():
+                # Create new category values using the validated (capitalized) data
+                category_values_to_create = [
+                    CategoryValue(category_id=category, category_value=value)
+                    for value in serializer.validated_data['category_values']
+                ]
+                CategoryValue.objects.bulk_create(category_values_to_create)
+
+                return Response({
+                    'message': f"{len(category_values)} values successfully added to the category '{category.category_name}'.",
+                    'updated_values': serializer.validated_data['category_values']
+                }, status=status.HTTP_201_CREATED)
 
             return Response({
-                'message': f"{len(category_values)} values successfully added to the category {category.category_name}."
-            }, status=status.HTTP_201_CREATED)
+                'message': 'Invalid data',
+                'error': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         except Category.DoesNotExist:
             return Response({
@@ -74,6 +86,8 @@ class AddCategoryValuesView(APIView):
         
 
 class UpdateCategory(APIView):
+    permission_classes = [IsAdminUser]
+
     def put(self, request, category_id):
         try:
             category = Category.objects.get(category_id=category_id)
@@ -103,46 +117,63 @@ class UpdateCategory(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
     
 class UpdateCategoryValues(APIView):
-    def put(self, request,category_id, category_value_id):
+    permission_classes = [IsAdminUser]
+
+    def put(self, request, category_id, category_value_id):
         try:
-            # Retrieve the Category object using category_id
+            # Validate the existence of the Category
             category = Category.objects.get(category_id=category_id)
         except Category.DoesNotExist:
             return Response({
                 'message': f"Category with ID {category_id} not found."
             }, status=status.HTTP_404_NOT_FOUND)
-        
+
         try:
-            category_value = CategoryValue.objects.get(id=category_value_id, category_id=category)
+            # Validate the existence of the specific CategoryValue
+            category_value = CategoryValue.objects.get(value_id=category_value_id, category_id=category)
         except CategoryValue.DoesNotExist:
             return Response({
-                'message': f"Category value with ID {category_value_id} not found in this category."
+                'message': f"Category value with ID {category_value_id} not found for category ID {category_id}."
             }, status=status.HTTP_404_NOT_FOUND)
-        
+
+        # Deserialize and validate the input data
         serializer = CategoryValuesSerializer(category_value, data=request.data, partial=True)
-        
+
         if serializer.is_valid():
-            new_category_value = serializer.validated_data.get('category_value', category_value.category_value).capitalize()
-            
-            if CategoryValue.objects.filter(category_id=category, category_value__iexact=new_category_value).exclude(id=category_value_id).exists():
-                return Response({
-                    'message': f"A category value with the name '{new_category_value}' already exists in this category."
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Save the updated category value
-            category_value.category_value = new_category_value
+            # Process the new values
+            new_category_values = serializer.validated_data.get('category_values', [])
+
+            # Capitalize each value for consistent storage
+            capitalized_values = [value.capitalize() for value in new_category_values]
+
+            # Ensure all new values are unique within this category
+            for value in capitalized_values:
+                if CategoryValue.objects.filter(
+                    category_id=category,
+                    category_value__iexact=value
+                ).exclude(value_id=category_value_id).exists():
+                    return Response({
+                        'message': f"A category value '{value}' already exists in this category."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Update and save the category values
+            category_value.category_value = ", ".join(capitalized_values)  # Adjust as per your field structure
             category_value.save()
-            
+
             return Response({
-                'message': f"Category value '{new_category_value}' updated successfully."
+                'message': f"Category value(s) updated successfully for category ID {category_id}.",
+                'updated_values': capitalized_values
             }, status=status.HTTP_200_OK)
-        
+
+        # Handle validation errors
         return Response({
             'error_message': 'Invalid data',
             'error': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
     
 class ListCategory(APIView):
+    permission_classes = [IsAdminUser]
+
     def get(self, request):
         try:
             categories = Category.objects.all()
@@ -157,6 +188,8 @@ class ListCategory(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class ListCategoryValues(APIView):
+    permission_classes = [IsAdminUser]
+
     def get(self, request, category_id):
         try:
             category = Category.objects.get(category_id=category_id)
@@ -186,14 +219,9 @@ class ListCategoryValues(APIView):
 
 
 class DeleteCategoryAndValues(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
     def delete(self, request, category_id):
         try:
-            if not request.user.is_admin:
-                return Response({
-                    'message':'Normal user cannot use admin privileges'
-                }, status=status.HTTP_401_UNAUTHORIZED)
-            # Check if category exists
             category = Category.objects.get(category_id=category_id)
 
             # Delete all CategoryValue instances related to this category

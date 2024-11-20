@@ -14,6 +14,7 @@ class Category(models.Model):
 
 class CategoryValue(models.Model):
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="values")
+    value_id = models.AutoField(primary_key=True)
     category_value = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

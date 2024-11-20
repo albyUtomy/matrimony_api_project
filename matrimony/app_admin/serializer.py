@@ -8,7 +8,7 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['category_id', 'category_name']
         
     def validate_category_name(self, value):
-        vale = value.capitalize()
+        value = value.capitalize()
         if Category.objects.filter(category_name__iexact=value).exists():
             raise serializers.ValidationError(f"A category with the name '{value}' already exists.")
         return value.capitalize()
@@ -28,9 +28,9 @@ class CategoryValuesSerializer(serializers.ModelSerializer):
 
     def validate_category_values(self, values):
         capitalized_values = [value.capitalize() for value in values]
-        
         category_id = self.initial_data.get('category_id')
 
+        # Check if the category values already exist in the specified category
         for value in capitalized_values:
             if CategoryValue.objects.filter(category_id=category_id, category_value__iexact=value).exists():
                 raise serializers.ValidationError(f"A value with the name '{value}' already exists in this category.")
