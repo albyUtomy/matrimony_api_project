@@ -34,8 +34,9 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'app_user_authentications',
+    'app_admin',
+
     'rest_framework',
-    # 'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     

@@ -16,7 +16,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserSerializer, InactiveUserSerializer, UserLoginSerializer
 from .models import UserSetupModel
 
+import logging
 
+# Set up a logger for better debugging
+logger = logging.getLogger(__name__)
 
 
 # Create your views here.
@@ -120,20 +123,20 @@ class UserLoginView(APIView):
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
-            # Log the error for debugging purposes (don't expose this in the response)
-            print("Error during login:", e)
+            # Log the exception with more detail
+            logger.error("Error during login", exc_info=True)
             return Response({
                 "error": "An error occurred during login"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
+""
 
 
 class UserLogOutView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
         try:
-            refresh_token = request.data.get('refresh_token')
+            refresh_token = request.data.get('refresh')
 
             if not refresh_token:
                 return Response({
