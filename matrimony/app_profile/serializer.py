@@ -8,8 +8,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'user', 'age', 'gender', 'dob', 'bio', 'weight', 'height',
             'religion', 'caste', 'income', 'profession', 'education',
-            'address', 'language'
+            'address', 'language', 'phone_number'
         ]
+
 
     def validate(self, data):
         """

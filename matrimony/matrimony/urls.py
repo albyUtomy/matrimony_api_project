@@ -23,6 +23,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('users/',include('app_user_authentications.urls')),
     path('admin_handlings/',include('app_admin.urls')),
-    path('profile/',include('app_profile.urls')),
+    path('profiles/',include('app_profile.urls')),
     # path('preference/',include('app_preference.urls')),
 ]

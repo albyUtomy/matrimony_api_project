@@ -1,12 +1,10 @@
 # django import
 from django.db import models
-from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now
 
 # other imports
-from .validators import validate_phone_number, password_validate
-
+from core.validator import validate_phone_number
 
 # Custom Managers
 class ActiveManager(models.Manager):
@@ -47,6 +45,7 @@ class UserSetupModel(AbstractUser):
                                 unique=True
                                 )
     email = models.EmailField(unique=True, blank=False, null=False)
+    profile = models.OneToOneField('app_profile.UserProfile',on_delete=models.SET_NULL,null=True, blank=True)
     date_joined = models.DateTimeField(auto_now=True)
     subscription_id = models.IntegerField(null=True, blank=True)
     is_admin = models.BooleanField(default=False)
@@ -64,33 +63,3 @@ class UserSetupModel(AbstractUser):
     def __str__(self):
         return f'{self.username} - id : {self.user_id}'
     
-
-
-"""
-from django.db import models
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-class RefreshTokenStore(models.Model):
-    user = models.ForeignKey(UserSetupModel, on_delete=models.CASCADE, related_name="refresh_tokens")
-    token = models.CharField(max_length=225)
-    token_hash = models.CharField(max_length=128)
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
-    is_active = models.BooleanField(default=True)
-
-    def save(self, *args, **kwargs):
-        if self.token and  not self.token_hash.startswith('pbkdf2_'):  # Avoid re-hashing
-            self.token_hash = make_password(self.token)
-        super().save(*args, **kwargs)
-
-    def is_valid(self):
-        return self.is_active and self.expires_at > now()
-    
-    def verify_token(self, token):
-        return self.is_valid() and check_password(token, self.token_hash)
-    
-    def __str__(self):
-        return f"Token for user {self.user.username}, active : {self.is_active}"
-"""
