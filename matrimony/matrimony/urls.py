@@ -24,5 +24,5 @@ urlpatterns = [
     path('users/',include('app_user_authentications.urls')),
     path('admin_handlings/',include('app_admin.urls')),
     path('profiles/',include('app_profile.urls')),
-    # path('preference/',include('app_preference.urls')),
+    path('preference/',include('app_preference.urls')),
 ]

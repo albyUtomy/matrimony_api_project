@@ -29,6 +29,7 @@ class CreateProfileView(APIView):
             user_phone = user.phone_no if hasattr(user, 'phone_no') else None
             profile_data = request.data.copy()
             profile_data['phone_number'] = user_phone
+            profile_data['user'] = user.user_id
 
 
             serializer = UserProfileSerializer(data=profile_data)

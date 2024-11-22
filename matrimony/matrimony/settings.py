@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'app_user_authentications',
     'app_admin',
     'app_profile',
+    'app_preference',
 
     'rest_framework',
     'rest_framework_simplejwt',

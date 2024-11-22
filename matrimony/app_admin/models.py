@@ -24,3 +24,12 @@ class CategoryValue(models.Model):
 
     def __str__(self):
         return f"{self.category_id} : {self.category_value}"
+
+
+
+class Subscription(models.Model):
+    subscription_id = models.AutoField(primary_key=True)
+    subscription_name = models.CharField(blank=True, null=True)
+    subscription_duration = models.PositiveIntegerField(blank=True, null=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
