@@ -12,6 +12,7 @@ class Category(models.Model):
         return f"{self.category_id}: {self.category_name}"
     
 
+
 class CategoryValue(models.Model):
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="values")
     value_id = models.AutoField(primary_key=True)
@@ -29,7 +30,12 @@ class CategoryValue(models.Model):
 
 class Subscription(models.Model):
     subscription_id = models.AutoField(primary_key=True)
-    subscription_name = models.CharField(blank=True, null=True)
+    subscription_name = models.CharField(max_length=150, blank=True, null=True, unique=True)
     subscription_duration = models.PositiveIntegerField(blank=True, null=False)
+    subscription_description = models.TextField(max_length=300)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.subscription_id} : {self.subscription_name}"
