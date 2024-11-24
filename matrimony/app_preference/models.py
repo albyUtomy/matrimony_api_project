@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from utils.field_validator import get_valid_category_values
-
+from app_admin.models import CategoryValue
 
 # Create your models here.
 
@@ -13,11 +13,14 @@ class UserPreference(models.Model):
         on_delete=models.CASCADE,
         related_name='preference'
     )
+    preference_id = models.AutoField(primary_key=True)
     caste = models.CharField(max_length=50, null=True, blank=True)
+    religion = models.CharField(max_length=50, null=True, blank=True)
     profession = models.CharField(max_length=100, null=True, blank=True)
     education = models.CharField(max_length=100, null=True, blank=True)
     language = models.CharField(max_length=100, null=True, blank=True)
-
+    gender = models.CharField(max_length=10, null=True, blank=True)
+    
 
     age_min = models.PositiveIntegerField(
         validators=[MinValueValidator(18)],
@@ -35,43 +38,47 @@ class UserPreference(models.Model):
     
     height_min = models.PositiveIntegerField(blank=True, null=True)
     height_max = models.PositiveIntegerField(blank=True, null=True)
-    is_active = models.BooleanField()
+    is_active = models.BooleanField(default=True)
 
     def clean(self):
         """
-        Validate the fields based on the valid category values.
+        Validate category-based fields using the CategoryValue table.
         """
-        valid_values = {
-            "Caste": get_valid_category_values("Caste"),
-            "Profession": get_valid_category_values("Profession"),
-            "Education": get_valid_category_values("Education"),
-            "Religion": get_valid_category_values("Religion"),
-            "Marital_status": get_valid_category_values("Marital_status"),
-            "Gender": get_valid_category_values("Gender"),
-            "Location": get_valid_category_values("Location"),
+        # Validate category-based fields
+        category_fields = {
+            'religion':self.religion,
+            'gender': self.gender,
+            'caste': self.caste,
+            'profession': self.profession,
+            'education': self.education,
         }
 
-        # Validate fields against their valid values
-        for field, valid_list in valid_values.items():
-            field_value = getattr(self, field.lower(), None)
-            if field_value and field_value not in valid_list:
+        for field, value in category_fields.items():
+            if value and not CategoryValue.objects.filter(
+                category_id__category_name__iexact=field,
+                category_value__iexact=value
+            ).exists():
+                # Fetch all valid values for the category
+                valid_values = CategoryValue.objects.filter(
+                    category_id__category_name__iexact=field
+                ).values_list('category_value', flat=True)
+                
                 raise ValidationError({
-                    field.lower(): f"Invalid {field.lower()}. Allowed values are: {', '.join(valid_list)}"
+                    field: f"'{value}' is not a valid {field} option.",
+                    "valid_fields": list(valid_values)  # Include valid options in the error
                 })
-            
-
         # Validate age range
         if self.age_min and self.age_max and self.age_min > self.age_max:
             raise ValidationError({
                 'age_min': "Minimum age cannot be greater than maximum age.",
                 'age_max': "Maximum age cannot be less than minimum age."
             })
-        
-        # Validate income range
-        if self.income_min and self.income_max and self.income_min > self.income_max:
+
+        # Validate height range
+        if self.height_min and self.height_max and self.height_min > self.height_max:
             raise ValidationError({
-                'income_min': "Minimum income cannot be greater than maximum income.",
-                'income_max': "Maximum income cannot be less than minimum income."
+                'height_min': "Minimum height cannot be greater than maximum height.",
+                'height_max': "Maximum height cannot be less than minimum height."
             })
 
     def __str__(self):
