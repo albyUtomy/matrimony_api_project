@@ -8,11 +8,7 @@ from app_admin.models import CategoryValue
 # Create your models here.
 
 class UserPreference(models.Model):
-    user = models.OneToOneField(
-        'app_user_authentications.UserSetupModel',
-        on_delete=models.CASCADE,
-        related_name='preference'
-    )
+    user = models.ForeignKey("app_user_authentications.UserSetupModel",on_delete=models.CASCADE, related_name='preference_user')
     preference_id = models.AutoField(primary_key=True)
     caste = models.CharField(max_length=50, null=True, blank=True)
     religion = models.CharField(max_length=50, null=True, blank=True)

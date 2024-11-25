@@ -5,8 +5,11 @@ from rest_framework import status
 from app_user_authentications.models import UserSetupModel
 from app_preference.models import UserPreference
 from .models import Matching, MatchDetail
+from rest_framework.permissions import IsAuthenticated
 
 class UserMatchesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def calculate_and_save_matches(self, user):
         try:
             # Retrieve the user's preferences
@@ -91,8 +94,9 @@ class UserMatchesAPIView(APIView):
 
         return matches
 
-    def get(self, request, user_id, *args, **kwargs):
+    def get(self, request,*args, **kwargs):
         try:
+            user_id = request.user.user_id
             user = UserSetupModel.objects.get(user_id=user_id)
         except UserSetupModel.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)

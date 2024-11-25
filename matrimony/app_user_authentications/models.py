@@ -47,6 +47,7 @@ class UserSetupModel(AbstractUser):
                                 )
     email = models.EmailField(unique=True, blank=False, null=False)
     profile = models.OneToOneField('app_profile.UserProfile',on_delete=models.SET_NULL,null=True, blank=True)
+    preference = models.OneToOneField('app_preference.UserPreference',on_delete=models.SET_NULL,null=True, blank=True, related_name='user_preference')
     date_joined = models.DateTimeField(auto_now=True)
     subscription_id = models.IntegerField(null=True, blank=True)
     is_admin = models.BooleanField(default=False)

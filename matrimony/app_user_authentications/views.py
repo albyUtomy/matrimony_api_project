@@ -170,10 +170,36 @@ class ListOnlyAdmin(ListAPIView):
             queryset = queryset.filter(is_admin=is_admin)
         return queryset
     
-class UserRetrieveUpdateView(RetrieveUpdateAPIView):
-    queryset = UserSetupModel.objects.all()
-    serializer_class = UserSerializer
-    lookup_field = 'user_id'
+class UpdateCurrentUserAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+
+    def put(self, request, *args, **kwargs):
+        try:
+            # Get the currently authenticated user
+            user = request.user
+
+            # Use the serializer to validate and update user data
+            serializer = UserSerializer(user, data=request.data, partial=True)  # partial=True allows updating only provided fields
+            
+            if serializer.is_valid():
+                # Save the updated user details
+                serializer.save()
+
+                return Response({
+                    'message': 'User updated successfully.',
+                    'data': serializer.data
+                }, status=status.HTTP_200_OK)
+
+            return Response({
+                'message': 'Invalid data.',
+                'error_details': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                'message': 'An error occurred while updating user.',
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UserDeactivate(APIView):

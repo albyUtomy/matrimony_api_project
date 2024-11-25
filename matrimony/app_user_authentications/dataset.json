@@ -1,0 +1,158 @@
+[
+    {
+      "username": "admin_alice",
+      "first_name": "Alice",
+      "last_name": "Johnson",
+      "email": "alice4.johnson@example.com",
+      "password": "Password#123",
+      "phone_no": "9876543210",
+      "is_active": true,
+      "is_admin": true
+    },
+    {
+      "username": "admin_bob",
+      "first_name": "Bob",
+      "last_name": "Smith",
+      "email": "bob.smith@example.com",
+      "password": "Password#456",
+      "phone_no": "9876543220",
+      "is_active": true,
+      "is_admin": true
+    },
+    {
+      "username": "admin_charlie",
+      "first_name": "Charlie",
+      "last_name": "Brown",
+      "email": "charlie.brown@example.com",
+      "password": "Password#789",
+      "phone_no": "9876543230",
+      "is_active": true,
+      "is_admin": true
+    },
+    {
+      "username": "admin_david",
+      "first_name": "David",
+      "last_name": "Williams",
+      "email": "david.williams@example.com",
+      "password": "Password#101112",
+      "phone_no": "9876543240",
+      "is_active": true,
+      "is_admin": true
+    },
+    {
+      "username": "admin_eve",
+      "first_name": "Eve",
+      "last_name": "Davis",
+      "email": "eve.davis@example.com",
+      "password": "Password#131415",
+      "phone_no": "9876543250",
+      "is_active": true,
+      "is_admin": true
+    }
+]
+
+  
+
+[
+    {
+      "username": "new_user1",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "user1.doe@example.com",
+      "password": "Password#123",
+      "phone_no": "9876543210",
+      "is_active": true,
+      "is_admin": false
+    },
+    {
+      "username": "new_user2",
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "email": "user2.smith@example.com",
+      "password": "Password#234",
+      "phone_no": "9876543211",
+      "is_active": true,
+      "is_admin": false
+    },
+    {
+      "username": "new_user3",
+      "first_name": "Alice",
+      "last_name": "Johnson",
+      "email": "user3.johnson@example.com",
+      "password": "Password#345",
+      "phone_no": "9876543212",
+      "is_active": true,
+      "is_admin": false
+    },
+    {
+      "username": "new_user4",
+      "first_name": "Bob",
+      "last_name": "Brown",
+      "email": "user4.brown@example.com",
+      "password": "Password#456",
+      "phone_no": "9876543213",
+      "is_active": true,
+      "is_admin": false
+    },
+    {
+      "username": "new_user5",
+      "first_name": "Charlie",
+      "last_name": "Davis",
+      "email": "user5.davis@example.com",
+      "password": "Password#567",
+      "phone_no": "9876543214",
+      "is_active": true,
+      "is_admin": false
+    },
+    {
+      "username": "new_user6",
+      "first_name": "David",
+      "last_name": "Miller",
+      "email": "user6.miller@example.com",
+      "password": "Password#678",
+      "phone_no": "9876543215",
+      "is_active": true,
+      "is_admin": false
+    },
+    {
+      "username": "new_user7",
+      "first_name": "Eve",
+      "last_name": "Wilson",
+      "email": "user7.wilson@example.com",
+      "password": "Password#789",
+      "phone_no": "9876543216",
+      "is_active": true,
+      "is_admin": false
+    },
+    {
+      "username": "new_user8",
+      "first_name": "Frank",
+      "last_name": "Moore",
+      "email": "user8.moore@example.com",
+      "password": "Password#890",
+      "phone_no": "9876543217",
+      "is_active": true,
+      "is_admin": false
+    },
+    {
+      "username": "new_user9",
+      "first_name": "Grace",
+      "last_name": "Taylor",
+      "email": "user9.taylor@example.com",
+      "password": "Password#901",
+      "phone_no": "9876543218",
+      "is_active": true,
+      "is_admin": false
+    },
+    {
+      "username": "new_user10",
+      "first_name": "Hank",
+      "last_name": "Anderson",
+      "email": "user10.anderson@example.com",
+      "password": "Password#012",
+      "phone_no": "9876543219",
+      "is_active": true,
+      "is_admin": false
+    }
+  ]
+  
