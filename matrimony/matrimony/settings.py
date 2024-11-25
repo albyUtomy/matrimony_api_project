@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'app_matching',
     'app_message',
     'app_connection_handler',
+    'app_notification',
 
     'rest_framework',
     'rest_framework_simplejwt',
