@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
-
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'app_admin',
     'app_profile',
     'app_preference',
+    'app_matching',
+    'app_message',
+    'app_connection_handler',
 
     'rest_framework',
     'rest_framework_simplejwt',
@@ -155,3 +158,6 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES':('Bearer',)
     # other settings...
 }
+
+MEDIA_URL = '/media/' 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media') 

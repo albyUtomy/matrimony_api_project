@@ -20,6 +20,8 @@ class UserPreference(models.Model):
     education = models.CharField(max_length=100, null=True, blank=True)
     language = models.CharField(max_length=100, null=True, blank=True)
     gender = models.CharField(max_length=10, null=True, blank=True)
+    marital_status = models.CharField(max_length=10, null=True, blank=True)
+    location = models.CharField(max_length=150, null=True, blank=True)
     
 
     age_min = models.PositiveIntegerField(
@@ -51,6 +53,9 @@ class UserPreference(models.Model):
             'caste': self.caste,
             'profession': self.profession,
             'education': self.education,
+            'language': self.language,
+            'marital_status':self.marital_status,
+            'location':self.location
         }
 
         for field, value in category_fields.items():

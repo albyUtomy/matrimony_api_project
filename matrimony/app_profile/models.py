@@ -25,6 +25,7 @@ class UserProfile(models.Model):
     profession = models.CharField(max_length=100)
     education = models.CharField(max_length=100)
     address = models.TextField(null=True, blank=True)
+    location = models.CharField(max_length=150, null=True, blank=True)
     language = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
 
@@ -39,6 +40,7 @@ class UserProfile(models.Model):
             'caste': self.caste,
             'profession': self.profession,
             'education': self.education,
+            'language': self.education,
         }
 
         for field, value in category_fields.items():

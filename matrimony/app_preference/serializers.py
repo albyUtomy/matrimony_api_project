@@ -7,7 +7,7 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
         model = UserPreference
         fields = [
             'user','religion', 'caste', 'profession', 'education', 'language','gender',
-            'age_min', 'age_max', 'height_min', 'height_max'
+            'age_min', 'age_max', 'height_min', 'height_max','marital_status'
         ]  # Include all relevant fields
     
     def validate(self, data):
@@ -21,6 +21,9 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
             'caste': data.get('caste'),
             'profession': data.get('profession'),
             'education': data.get('education'),
+            'language': data.get('language'),
+            'marital_status':data.get('marital_status'),
+            'location':data.get('location')
         }
 
         for field, value in category_fields.items():

@@ -22,6 +22,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'caste': data.get('caste'),
             'profession': data.get('profession'),
             'education': data.get('education'),
+            'language': data.get('language'),
         }
 
         for field, value in category_fields.items():

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class CreateUser(APIView):
     def post(self, request):
         try:
-            serializer = UserSerializer(data=request.data)
+            serializer = UserSerializer(data=request.data, many=True)
             if serializer.is_valid():
                 user = serializer.save()
                 return Response({

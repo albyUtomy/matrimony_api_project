@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now
+from app_connection_handler.models import BlockedUser
 
 # other imports
 from core.validator import validate_phone_number
@@ -50,6 +51,7 @@ class UserSetupModel(AbstractUser):
     subscription_id = models.IntegerField(null=True, blank=True)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    blocked_users = models.ManyToManyField('self', symmetrical=False, related_name='blocked_by_users', blank=True)
 
     # managers
     # admin_object = AdminManager()

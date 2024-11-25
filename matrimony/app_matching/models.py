@@ -1,16 +1,20 @@
+# app_matching/models.py
 from django.db import models
-
-# Create your models here.
+from app_user_authentications.models import UserSetupModel
 
 class Matching(models.Model):
-    user = models.OneToOneField(
-        'app_user_authentications.UserSetupModel',
-        on_delete=models.CASCADE,
-        related_name='matching'
+    user = models.ForeignKey(
+        UserSetupModel, on_delete=models.CASCADE, related_name='matches_initiated'
     )
     matched_users = models.ManyToManyField(
-        'app_user_authentications.UserSetupModel',
-        related_name='matched_with'
+        UserSetupModel, through='MatchDetail', related_name='matches_received'
     )
-    updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
+
+class MatchDetail(models.Model):
+    matching = models.ForeignKey(Matching, on_delete=models.CASCADE)
+    matched_user = models.ForeignKey(UserSetupModel, on_delete=models.CASCADE)
+    score = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('matching', 'matched_user')  # Ensure no duplicate matches

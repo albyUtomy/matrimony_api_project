@@ -18,11 +18,19 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('users/',include('app_user_authentications.urls')),
     path('admin_handlings/',include('app_admin.urls')),
-    path('profiles/',include('app_profile.urls')),
-    path('preference/',include('app_preference.urls')),
+    path('user/profiles/',include('app_profile.urls')),
+    path('user/preference/',include('app_preference.urls')),
+    path('user/matching/',include('app_matching.urls')),
+    path('message/',include('app_message.urls')),
+    path('connection_requests/',include('app_connection_handler.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

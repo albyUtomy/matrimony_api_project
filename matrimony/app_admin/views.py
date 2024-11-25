@@ -11,7 +11,7 @@ from .serializer import CategorySerializer, CategoryValuesSerializer,CategoryVal
 from core.permissions import IsAdminUser
 # Create your views here.
 class CreateCategoryView(APIView):
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
 
     def post(self, request):
         try:
@@ -35,7 +35,7 @@ class CreateCategoryView(APIView):
         
 
 class AddCategoryValuesView(APIView):
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
 
     def post(self, request, category_id):
         try:
@@ -86,7 +86,7 @@ class AddCategoryValuesView(APIView):
         
 
 class UpdateCategory(APIView):
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
 
     def put(self, request, category_id):
         try:
@@ -117,7 +117,7 @@ class UpdateCategory(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
     
 class UpdateCategoryValues(APIView):
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
 
     def put(self, request, category_id, category_value_id):
         try:
@@ -172,15 +172,26 @@ class UpdateCategoryValues(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
     
 class ListCategory(APIView):
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
 
     def get(self, request):
         try:
+            # Fetch all categories
             categories = Category.objects.all()
-            serializer = CategorySerializer(categories, many=True)
-            return Response({
-                'message':serializer.data
-            }, status=status.HTTP_200_OK)
+            category_data = []
+
+            for category in categories:
+                # Fetch the values for each category
+                category_values = CategoryValue.objects.filter(category_id=category).values_list('category_value', flat=True)
+                
+                category_data.append({
+                    'category_id':category.category_id,
+                    'category_name': category.category_name,
+                    'category_values': list(category_values)
+                })
+
+            return Response(category_data, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response({
                 "message": "An error occurred while fetching categories.",
@@ -188,7 +199,7 @@ class ListCategory(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class ListCategoryValues(APIView):
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
 
     def get(self, request, category_id):
         try:
