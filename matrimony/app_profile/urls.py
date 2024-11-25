@@ -1,8 +1,10 @@
 from django.urls import path
-from .views import CreateProfileView, UpdateUserProfileView
+from .views import CreateProfileView, UpdateUserProfileView,ViewProfileView,GetUserProfileView
 
 urlpatterns = [
-    path('<int:user_id>/add_profile/', CreateProfileView.as_view(), name='create-profile'),
-    path('<int:user_id>/update_profile/', UpdateUserProfileView.as_view(), name='update-profile'),
+    path('add_profile/', CreateProfileView.as_view(), name='create-profile'),
+    path('view_profile/', ViewProfileView.as_view(), name='view-profile'),
+     path('search_profile/<int:user_id>/', GetUserProfileView.as_view(), name='get_user_profile'),
+    path('update_profile/', UpdateUserProfileView.as_view(), name='update-profile'),
 
 ]

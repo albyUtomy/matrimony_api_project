@@ -33,6 +33,7 @@ class Subscription(models.Model):
     subscription_name = models.CharField(max_length=150, blank=True, null=True, unique=True)
     subscription_duration = models.PositiveIntegerField(blank=True, null=False)
     subscription_description = models.TextField(max_length=300)
+    subscription_price = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)

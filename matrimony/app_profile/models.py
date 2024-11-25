@@ -21,7 +21,6 @@ class UserProfile(models.Model):
     height = models.FloatField(null=True, blank=True)
     religion = models.CharField(max_length=50)
     caste = models.CharField(max_length=50)
-    income = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     profession = models.CharField(max_length=100)
     education = models.CharField(max_length=100)
     address = models.TextField(null=True, blank=True)

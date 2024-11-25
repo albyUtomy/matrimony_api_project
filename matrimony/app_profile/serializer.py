@@ -3,11 +3,12 @@ from .models import UserProfile
 from app_admin.models import CategoryValue
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
     class Meta:
         model = UserProfile
         fields = [
-            'user', 'age', 'gender', 'dob', 'bio', 'weight', 'height',
-            'religion', 'caste', 'income', 'profession', 'education',
+            'user','user_name', 'age', 'gender', 'dob', 'bio', 'weight', 'height',
+            'religion', 'caste',  'profession', 'education','location',
             'address', 'language', 'phone_number'
         ]
 

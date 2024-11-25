@@ -11,10 +11,13 @@ from rest_framework.response import Response
 from rest_framework import status
 """from rest_framework.authtoken.models import Token"""
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 # other imports
 from .serializers import UserSerializer, InactiveUserSerializer, UserLoginSerializer
 from .models import UserSetupModel
+from app_connection_handler.serializers import BlockedUserSerializer
+from app_connection_handler.models import BlockedUser
 
 import logging
 
@@ -76,46 +79,50 @@ class UserLoginView(APIView):
     def post(self, request):
         try:
             serializer = UserLoginSerializer(data=request.data)
-                
-            # Use the UserLoginSerializer to validate username and password
+
+            # Validate the data
             if not serializer.is_valid():
                 return Response({
-                    'message':'Invalid data',
-                    'error':serializer.errors
-                },status=status.HTTP_400_BAD_REQUEST)
-            
+                    'message': 'Invalid data',
+                    'error': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             username = serializer.validated_data['username']
             password = serializer.validated_data['password']
 
-            if not username and password:
+            if not username or not password:
                 return Response({
-                    'message':'Username and password are required'
+                    'message': 'Username and password are required'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             # Authenticate the user
-            print("username and password : ", username, password)
+            print("username and password:", username, password)
             user = authenticate(request, username=username, password=password)
-            print(f"Attempting login for user: {username}, is_admin={user.is_admin}")
+            print(f"Attempting login for user: {username}")
 
             if user is None:
+                # Log the failure for debugging
                 return Response({
-                   'message':'Invalid username or password'
+                    'message': 'User not found or password mismatch'
                 }, status=status.HTTP_401_UNAUTHORIZED)
-            
-            if not user.is_active:
+
+            # Check if the user already has an active token
+            active_tokens = OutstandingToken.objects.filter(user=user)
+            for token in active_tokens:
+                if not BlacklistedToken.objects.filter(token=token).exists():
                     return Response({
-                        'message':'User account is deactivated. Please contact the admin to reactivate'
-                    }, status=status.HTTP_403_FORBIDDEN)
+                        'message': f"User '{user.username}' is already logged in."
+                    }, status=status.HTTP_400_BAD_REQUEST)
 
+            # Log the user in
+            login(request, user)
+            print(f"Authenticated user with ID: {user.user_id}")
 
-            login(request,user)
-                    
-            print(f"Authenticated user with ID >>>>>>>>>>: {user.user_id}")
-
+            # Generate tokens
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
-            print(f"Authenticated user with user_id /////// : {user.user_id}")
-                    
+            print(f"Generated tokens for user {username}")
+
             return Response({
                 'access': access_token,
                 'refresh': str(refresh),
@@ -123,13 +130,13 @@ class UserLoginView(APIView):
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
-            # Log the exception with more detail
-            logger.error("Error during login", exc_info=True)
+            # Log exception for better debugging
+            print(f"Error during login: {str(e)}")
             return Response({
-                "error": "An error occurred during login"
+                "message": "An error occurred during login",
+                'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-""
+
 
 
 class UserLogOutView(APIView):
@@ -170,13 +177,13 @@ class UserRetrieveUpdateView(RetrieveUpdateAPIView):
 
 
 class UserDeactivate(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     def put(self, request, user_id=None):
         try:
-            # current_user = request.user
+            current_user = request.user
 
-            # if user_id is None:
-            #     user_id = current_user.user_id
+            if user_id is None:
+                user_id = current_user.user_id
 
             try:
                 user_to_deactivate = UserSetupModel.objects.get(user_id=user_id)
@@ -185,10 +192,10 @@ class UserDeactivate(APIView):
                     'message':'User not found'
                 }, status=status.HTTP_404_NOT_FOUND)
             
-            # if not (current_user.is_admin or current_user.user_id == user_to_deactivate.user_id):
-            #     return Response({
-            #         "message": "Unauthorized: Only admins or the user themselves can deactivate."
-            #     }, status=status.HTTP_403_FORBIDDEN)
+            if not (current_user.is_admin or current_user.user_id == user_to_deactivate.user_id):
+                return Response({
+                    "message": "Unauthorized: Only admins or the user themselves can deactivate."
+                }, status=status.HTTP_403_FORBIDDEN)
             
             if not user_to_deactivate.is_active:
                 return Response({
@@ -266,3 +273,28 @@ class ListInActiveUser(ListAPIView):
     def get_queryset(self):
         query_set = UserSetupModel.inactive_object.all()
         return query_set
+    
+class ListBlockedUsers(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_admin:
+            return Response({
+                'message': 'Unauthorized access, only admin can access'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+
+        blocked_users = BlockedUser.objects.all()
+        
+        # Check if the list is empty
+        if not blocked_users.exists():
+            return Response({
+                'message': 'The list of blocked users is empty.'
+            }, status=status.HTTP_200_OK)
+        
+        # Serialize and return the blocked users
+        serializer = BlockedUserSerializer(blocked_users, many=True)
+        return Response({
+            'message': 'List of blocked users with blockers.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
