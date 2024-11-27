@@ -5,7 +5,7 @@ from django.utils.timezone import now
 
 # imports from rest_framework
 from rest_framework.generics  import ListCreateAPIView,RetrieveUpdateAPIView, ListAPIView
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -27,15 +27,55 @@ logger = logging.getLogger(__name__)
 
 # Create your views here.
 class CreateUser(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         try:
-            serializer = UserSerializer(data=request.data, many=True)
+            if request.user and request.user.is_authenticated:
+                return Response({
+                    'message':'Authenticated users cannot create another account.',
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            serializer = UserSerializer(data=request.data)
             if serializer.is_valid():
-                user = serializer.save()
+                serializer.validated_data['is_admin'] = False
+                serializer.save()
                 return Response({
                     'message':'User created successfully',
                     'user':serializer.data
                 }, status=status.HTTP_201_CREATED)
+            
+            else:
+                return Response({
+                    'message':'Invalid data',
+                    'error':serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({
+                'message':'An error occurred while creating the user',
+                'error':str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CreateAdminUser(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        try:
+            if not request.user.is_admin:
+                return Response({
+                    'message':'Unauthorized access',
+                })
+            
+            serializer = UserSerializer(data=request.data, many=True)
+
+            if serializer.is_valid():
+                serializer.validated_data['is_admin'] = True
+                serializer.save()
+                return Response({
+                    'message':'User created successfully',
+                    'user':serializer.data
+                }, status=status.HTTP_201_CREATED)
+            
             else:
                 return Response({
                     'message':'Invalid data',
@@ -76,8 +116,15 @@ class UserListView(APIView):
     
 
 class UserLoginView(APIView):
+
+    permission_classes = [AllowAny]
     def post(self, request):
         try:
+            if request.user and request.user.is_authenticated:
+                return Response({
+                    'message':'Authenticated users cannot login to another account.',
+                },status=status.HTTP_400_BAD_REQUEST)
+            
             serializer = UserLoginSerializer(data=request.data)
 
             # Validate the data
@@ -137,6 +184,22 @@ class UserLoginView(APIView):
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class UserDetails(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            user_id = request.user.user_id
+            user = UserSetupModel.active_object.get(user_id=user_id)
+            serializer = UserSerializer(user)
+            return Response({
+                'message':'Current user details',
+                'user data':serializer.data
+            },status=status.HTTP_200_OK)
+        
+        except UserSetupModel.DoesNotExist:
+            return Response({
+                'message':'User not logged in'
+            })
 
 
 class UserLogOutView(APIView):

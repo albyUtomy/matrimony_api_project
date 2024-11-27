@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = UserSetupModel
         fields = [
             'user_id', 'username','profile', 'password', 'first_name', 'last_name', 'email', 
-            'phone_no', 'is_active', 'is_admin', 'last_login'
+            'phone_no', 'last_login'
         ]
         read_only_fields = ['user_id', 'last_login']
 
@@ -42,6 +42,23 @@ class UserSerializer(serializers.ModelSerializer):
         if password:
             instance.set_password(password)
         return super().update(instance, validated_data)
+    
+
+class UserDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSetupModel
+        fields = [
+            'user_id', 'username','profile', 'password', 'first_name', 'last_name', 'email', 
+            'phone_no', 'last_login', 'is_active'
+        ]
+
+class UserDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSetupModel
+        fields = [
+            'user_id', 'username','profile', 'password', 'first_name', 'last_name', 'email', 
+            'phone_no', 'last_login', 'is_active', 'is_admin', 'created_on', 'updated_on'
+        ]
     
 
 class InactiveUserSerializer(serializers.ModelSerializer):
