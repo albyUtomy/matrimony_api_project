@@ -31,6 +31,7 @@ urlpatterns = [
     path('message/',include('app_message.urls')),
     path('connection_requests/',include('app_connection_handler.urls')),
     path('user/notification',include('app_notification.urls')),
+    path('history/', include('app_user_history.urls'))
 ]
 
 if settings.DEBUG:

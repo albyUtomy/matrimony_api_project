@@ -18,6 +18,7 @@ from .serializers import UserSerializer, InactiveUserSerializer, UserLoginSerial
 from .models import UserSetupModel
 from app_connection_handler.serializers import BlockedUserSerializer
 from app_connection_handler.models import BlockedUser
+from app_user_history.models import TokenStorage
 
 import logging
 
@@ -93,6 +94,12 @@ class UserListView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
+            print("[ **************** REQUEST **************] : ",request)
+            print("[ **************** REQUEST USER **************] : ",request.user)
+            authorization_header = request.headers.get('Authorization')
+            if authorization_header and authorization_header.startswith('Bearer '):
+                access_token = authorization_header.split(' ')[1]
+                print("[ **************** ACCESS TOKEN **************] :", access_token)
             current_user = request.user
             if not current_user.is_admin:
                 return Response({
@@ -166,13 +173,20 @@ class UserLoginView(APIView):
             print(f"Authenticated user with ID: {user.user_id}")
 
             # Generate tokens
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
+            refresh_token = RefreshToken.for_user(user)
+            access_token = str(refresh_token.access_token)
             print(f"Generated tokens for user {username}")
+
+            # Saving token in TokenStorage Model
+            TokenStorage.objects.create(
+                user=user,
+                access_token=access_token,
+                refresh_token=refresh_token
+                )
 
             return Response({
                 'access': access_token,
-                'refresh': str(refresh),
+                'refresh': str(refresh_token),
                 'message': 'Login successful'
             }, status=status.HTTP_200_OK)
 
@@ -200,6 +214,11 @@ class UserDetails(APIView):
             return Response({
                 'message':'User not logged in'
             })
+        except Exception as e:
+            return Response({
+                'message':'Internal Issues',
+                'error_message':str(e)
+            },status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UserLogOutView(APIView):
@@ -267,15 +286,15 @@ class UpdateCurrentUserAPIView(APIView):
 
 class UserDeactivate(APIView):
     permission_classes = [IsAuthenticated]
-    def put(self, request, user_id=None):
+    def delete(self, request, user_id=None):
         try:
             current_user = request.user
-
             if user_id is None:
                 user_id = current_user.user_id
 
             try:
-                user_to_deactivate = UserSetupModel.objects.get(user_id=user_id)
+                user_to_deactivate = UserSetupModel.objects.get(user_id=current_user.user_id)
+                print("////////////////////////////////////",user_to_deactivate)
             except UserSetupModel.DoesNotExist:
                 return Response({
                     'message':'User not found'
@@ -291,12 +310,27 @@ class UserDeactivate(APIView):
                     'message':'User already deleted'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            user_to_deactivate.is_active = False
-            user_to_deactivate.save()
 
-            if user_to_deactivate.profile:
+            
+            if user_to_deactivate:
+                UserSetupModel.objects.filter(user_id=current_user.user_id).update(is_active=False)
                 user_to_deactivate.profile.is_active = False
                 user_to_deactivate.profile.save()
+                user_to_deactivate.preference.is_active = False
+                user_to_deactivate.preference.save()
+                TokenStorage.objects.filter(user_id=current_user.user_id).update(access_token_active=False, refresh_token_active=False)
+
+            refresh_token = request.data.get('refresh')
+
+            if not refresh_token:
+                return Response({
+                    'error_message':'Refresh token is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # blacklist the token
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            
 
             return Response({
                 "message": f"User {user_to_deactivate.username} deleted successfully"
