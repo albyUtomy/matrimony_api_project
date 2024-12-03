@@ -44,21 +44,25 @@ class UserSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
     
 
-class UserDetailsSerializer(serializers.ModelSerializer):
+class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSetupModel
         fields = [
-            'user_id', 'username','profile', 'password', 'first_name', 'last_name', 'email', 
-            'phone_no', 'last_login', 'is_active'
+            'user_id', 'username','profile','first_name', 'last_name', 'email', 
+            'phone_no', 'last_login'
         ]
 
-class UserDetailsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserSetupModel
-        fields = [
-            'user_id', 'username','profile', 'password', 'first_name', 'last_name', 'email', 
-            'phone_no', 'last_login', 'is_active', 'is_admin', 'created_on', 'updated_on'
-        ]
+    def validate(self, attrs):
+        valid_fields = set(self.fields.keys())
+        input_fields = set(self.initial_data.keys())
+        invalid_fields = input_fields - valid_fields
+        if invalid_fields:
+            raise serializers.ValidationError({
+                "invalid_fields": f"These fields are not valid: {', '.join(invalid_fields)}"
+            })
+
+        return super().validate(attrs)
+
     
 
 class InactiveUserSerializer(serializers.ModelSerializer):

@@ -9,6 +9,7 @@ class Message(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     read_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=10, default='unseen', choices=[('unseen', 'Unseen'), ('seen', 'Seen')])
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"Message from {self.sender} to {self.recipient}"

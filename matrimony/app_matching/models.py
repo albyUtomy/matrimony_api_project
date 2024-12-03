@@ -9,6 +9,8 @@ class Matching(models.Model):
     matched_users = models.ManyToManyField(
         UserSetupModel, through='MatchDetail', related_name='matches_received'
     )
+    is_active = models.BooleanField(default=True)
+
 
 class MatchDetail(models.Model):
     matching = models.ForeignKey(Matching, on_delete=models.CASCADE)

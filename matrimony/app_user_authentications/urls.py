@@ -24,7 +24,7 @@ urlpatterns = [
     path('admin/', ListOnlyAdmin.as_view(), name='user-list-create'),
     path('user/update/', UpdateCurrentUserAPIView.as_view(), name='user-retrieve-update'),
     path('user/deactivate/', UserDeactivate.as_view(), name='user-deactivate'),
-    path('user/reactivate/<int:user_id>/', UserReactivate.as_view(), name='user-deactivate'),
-    path('inactive', ListInActiveUser.as_view(), name='inactive-user-list'),
+    path('user/reactivate/', UserReactivate.as_view(), name='user-deactivate'),
+    path('inactive/', ListInActiveUser.as_view(), name='inactive-user-list'),
     path('blocked-users/', ListBlockedUsers.as_view(), name='list-blocked-users'),
 ]

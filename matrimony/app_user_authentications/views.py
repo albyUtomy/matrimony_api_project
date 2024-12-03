@@ -4,21 +4,23 @@ from django.contrib.auth import authenticate, login, logout
 from django.utils.timezone import now
 
 # imports from rest_framework
-from rest_framework.generics  import ListCreateAPIView,RetrieveUpdateAPIView, ListAPIView
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+from rest_framework.generics  import ListAPIView
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-"""from rest_framework.authtoken.models import Token"""
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied, APIException
 
 # other imports
-from .serializers import UserSerializer, InactiveUserSerializer, UserLoginSerializer
+from .serializers import UserSerializer, InactiveUserSerializer, UserLoginSerializer,UserUpdateSerializer
 from .models import UserSetupModel
+from .permissions import OnlyAdmin
 from app_connection_handler.serializers import BlockedUserSerializer
 from app_connection_handler.models import BlockedUser
 from app_user_history.models import TokenStorage
+from .utils import deactivate_user
 
 import logging
 
@@ -59,7 +61,7 @@ class CreateUser(APIView):
 
 
 class CreateAdminUser(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         try:
             if not request.user.is_admin:
@@ -67,7 +69,7 @@ class CreateAdminUser(APIView):
                     'message':'Unauthorized access',
                 })
             
-            serializer = UserSerializer(data=request.data, many=True)
+            serializer = UserSerializer(data=request.data)
 
             if serializer.is_valid():
                 serializer.validated_data['is_admin'] = True
@@ -91,15 +93,28 @@ class CreateAdminUser(APIView):
 
 
 class UserListView(APIView):
+    permission_classes = [OnlyAdmin]
+    def get(self, request):
+        try:
+            users = UserSetupModel.active_object.all()
+            serializer = UserSerializer(users, many=True)
+            return Response({
+                'message': 'User list retrieved successfully',
+                'users': serializer.data
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            # Return error response in case of any unexpected errors
+            return Response({
+                'message': 'An error occurred while retrieving the user list',
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class UserListView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
-            print("[ **************** REQUEST **************] : ",request)
-            print("[ **************** REQUEST USER **************] : ",request.user)
-            authorization_header = request.headers.get('Authorization')
-            if authorization_header and authorization_header.startswith('Bearer '):
-                access_token = authorization_header.split(' ')[1]
-                print("[ **************** ACCESS TOKEN **************] :", access_token)
             current_user = request.user
             if not current_user.is_admin:
                 return Response({
@@ -242,29 +257,32 @@ class UserLogOutView(APIView):
 
 
 class ListOnlyAdmin(ListAPIView):
+    permission_classes = [OnlyAdmin]
     serializer_class = UserSerializer
     def get_queryset(self):
-        # Filter users by the 'is_admin' status if needed
-        queryset = UserSetupModel.active_object.all()
+        try:
+            queryset = UserSetupModel.active_object.all()
+            return queryset
+        except UserSetupModel.DoesNotExist():
+            raise NotAuthenticated({
+                'message':'Admin login required'
+                },status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            raise APIException({
+                'message':'an error occurred',
+                'error_details':str(e)
+            },status=status.HTTP_400_BAD_REQUEST)
 
-        is_admin = self.request.query_params.get('is_admin', True)
-        if is_admin is not None:
-            queryset = queryset.filter(is_admin=is_admin)
-        return queryset
     
 class UpdateCurrentUserAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
         try:
-            # Get the currently authenticated user
             user = request.user
-
-            # Use the serializer to validate and update user data
-            serializer = UserSerializer(user, data=request.data, partial=True)  # partial=True allows updating only provided fields
+            serializer = UserUpdateSerializer(user, data=request.data, partial=True)
             
             if serializer.is_valid():
-                # Save the updated user details
                 serializer.save()
 
                 return Response({
@@ -294,7 +312,6 @@ class UserDeactivate(APIView):
 
             try:
                 user_to_deactivate = UserSetupModel.objects.get(user_id=current_user.user_id)
-                print("////////////////////////////////////",user_to_deactivate)
             except UserSetupModel.DoesNotExist:
                 return Response({
                     'message':'User not found'
@@ -310,16 +327,6 @@ class UserDeactivate(APIView):
                     'message':'User already deleted'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-
-            
-            if user_to_deactivate:
-                UserSetupModel.objects.filter(user_id=current_user.user_id).update(is_active=False)
-                user_to_deactivate.profile.is_active = False
-                user_to_deactivate.profile.save()
-                user_to_deactivate.preference.is_active = False
-                user_to_deactivate.preference.save()
-                TokenStorage.objects.filter(user_id=current_user.user_id).update(access_token_active=False, refresh_token_active=False)
-
             refresh_token = request.data.get('refresh')
 
             if not refresh_token:
@@ -327,11 +334,8 @@ class UserDeactivate(APIView):
                     'error_message':'Refresh token is required'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # blacklist the token
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            
-
+            if user_to_deactivate:
+                deactivate_user(user_to_deactivate, current_user.user_id, refresh_token)
             return Response({
                 "message": f"User {user_to_deactivate.username} deleted successfully"
             }, status=status.HTTP_200_OK)
@@ -343,20 +347,10 @@ class UserDeactivate(APIView):
             )
         
 class UserReactivate(APIView):
-    permission_classes = [IsAuthenticated]
-    def put(self, request, user_id=None):
+    permission_classes = [OnlyAdmin]
+    def put(self, request):
         try:
-            current_user = request.user
-            if not current_user.is_admin:
-                return Response({
-                    'message':'Unauthorized : Only admin can reactivate users'
-                }, status=status.HTTP_403_FORBIDDEN)
-            
-            if not user_id:
-                return Response({
-                    'message':'User id is required to reactivate a user'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
+            user_id = request.data['user_id']
             # attempt to find the user id
             try:
                 user_to_reactivate = UserSetupModel.objects.get(user_id=user_id)
@@ -373,6 +367,8 @@ class UserReactivate(APIView):
                 return Response({
                     'message':'User already active'
                 }, status=status.HTTP_400_BAD_REQUEST)
+
+            deactivate_user(user_to_reactivate, user_id)
 
             user_to_reactivate.is_active = True
             user_to_reactivate.save()
@@ -392,6 +388,7 @@ class UserReactivate(APIView):
         
 # LIst inactive user
 class ListInActiveUser(ListAPIView):
+    permission_classes = [OnlyAdmin]
     serializer_class = InactiveUserSerializer
     def get_queryset(self):
         query_set = UserSetupModel.inactive_object.all()
